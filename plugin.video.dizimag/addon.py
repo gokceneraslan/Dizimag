@@ -75,9 +75,9 @@ def get_show_episode_info(showcode):
         print "No such page exists..."
         return
 
-    episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-.*?-dizi\.html\">([^<]*?)</a>' % (showcode), showpage)
+    episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-[^>]*?-dizi\.html\">([^<]*?)</a>' % (showcode), showpage)
     return sorted(list(set(episode_urls)), cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
-
+ 
 def parse_show_rss(rss):
     tree = md.parseString(rss)
 
