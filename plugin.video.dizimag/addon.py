@@ -204,7 +204,11 @@ def display_show(params):
     season = params["season"][0]
     episode = params["episode"][0]
 
-    urls = get_show_video_urls(code, season, episode)
+    qualityRequested = xbmcgui.Dialog().select("Quality", [ WATCH_URL[key][2] for key in sorted(WATCH_URL.keys()) ])
+    if qualityRequested==-1: 
+        return
+
+    urls = get_show_video_urls(code, season, episode, qualityRequested)
     iconImage = thumb = get_show_thumbnail_url(code)
 
     if not urls:
