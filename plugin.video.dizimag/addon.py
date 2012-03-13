@@ -75,7 +75,7 @@ def get_show_episode_info(showcode):
         print "No such page exists..."
         return
 
-    episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-dizi\.html"' % (showcode), showpage)
+    episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-.*?-dizi\.html\">([^<]*?)</a>' % (showcode), showpage)
     return sorted(list(set(episode_urls)), cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
 
 def parse_show_rss(rss):
@@ -190,11 +190,11 @@ def display_show_episodes(params):
     thumbimage = get_show_thumbnail_url(code)
 
     epinfo = get_show_episode_info(code)
-    eplist = list(set((int(x[1]) for x in epinfo if x[0] == season)))
-    episodeStringWidth = len(str(max(eplist)))
+    eplist = list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season)))
+    episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
     for e in sorted(eplist, reverse = True):
-        create_list_item("%s - S%sE%s" % (name,season,str(e).zfill(episodeStringWidth)), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=str(e)), thumbnailImage = thumbimage)
+        create_list_item("%s - S%sE%s - %s" % (name,season,str(e[0]).zfill(episodeStringWidth), e[1]), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=str(e[0])), thumbnailImage = thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
