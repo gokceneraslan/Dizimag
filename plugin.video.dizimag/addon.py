@@ -5,7 +5,7 @@ import xbmc, xbmcaddon, xbmcgui, xbmcplugin
 import urllib, urlparse, urllib2, sys, re, xml.dom.minidom as md
 
 SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js"
-SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=1&x=%(code)s&d.xml"
+SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=%(lang)d&x=%(code)s&d.xml"
 SHOW_URL = "http://www.dizimag.com/%(show)s"
 SHOW_THUMBNAIL_URL = "http://i.dizimag.com/dizi/%(show)s.jpg"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.1) Gecko/20100101 Firefox/10.0.1"
@@ -18,11 +18,15 @@ WATCH_SHOW_NO_SUB_URL = "http://www.dizimag.com/%(show)s-%(season)s-sezon-%(epis
 # poor man's enum, hehe
 # Be careful: Types are in the order of choice
 WATCH_TYPE_TR_SUB_HD, WATCH_TYPE_TR_SUB, WATCH_TYPE_ENG_SUB, WATCH_TYPE_NO_SUB, = range(4)
+SUBTITLE_NONE, SUBTITLE_TURKISH, SUBTITLE_ENGLISH, = range(3)
 
-WATCH_URL = { WATCH_TYPE_TR_SUB_HD: (WATCH_SHOW_TR_SUB_HD_URL, "720p HD video"), 
-              WATCH_TYPE_TR_SUB:    (WATCH_SHOW_TR_SUB_URL,     "Low resolution video with Turkish subtitles"),
-              WATCH_TYPE_ENG_SUB:   (WATCH_SHOW_ENG_SUB_URL,    "Low resolution video with English subtitles"),  
-              WATCH_TYPE_NO_SUB:    (WATCH_SHOW_NO_SUB_URL,     "Low resolution video")} 
+
+WATCH_URL = { 
+              WATCH_TYPE_ENG_SUB:   (WATCH_SHOW_ENG_SUB_URL, SUBTITLE_ENGLISH, "Low resolution video with English subtitles"),  
+              WATCH_TYPE_NO_SUB:    (WATCH_SHOW_NO_SUB_URL, SUBTITLE_NONE,    "Low resolution video"),
+              WATCH_TYPE_TR_SUB_HD: (WATCH_SHOW_TR_SUB_HD_URL, SUBTITLE_TURKISH, "720p HD video"), 
+              WATCH_TYPE_TR_SUB:    (WATCH_SHOW_TR_SUB_URL, SUBTITLE_TURKISH,     "Low resolution video with Turkish subtitles")
+              } 
 
 __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
@@ -102,10 +106,10 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
         if not (highres or lowres):
             return
 
-        rss = open_url(SHOWFLV_URL % {'code': highres})
+        rss = open_url(SHOWFLV_URL % {'code': highres, 'lang': WATCH_URL[watch_type][1]})
 
         if not rss:
-            rss = open_url(SHOWFLV_URL % {'code': lowres})
+            rss = open_url(SHOWFLV_URL % {'code': lowres, 'lang': WATCH_URL[watch_type][1]})
             if not rss:
                 return
 
@@ -119,7 +123,7 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
     show = get_show(watch_type)
 
     if not show or not show[0]:
-        print "This episode is not available in format: '%s'" % WATCH_URL[watch_type][1]
+        print "This episode is not available in format: '%s'" % WATCH_URL[watch_type][2]
 
         for fallback in sorted(WATCH_URL.keys()):
             if fallback == watch_type:
@@ -130,7 +134,7 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
                 break
 
             else:
-                print "This episode is not available in format: '%s'" % WATCH_URL[fallback][1]
+                print "This episode is not available in format: '%s'" % WATCH_URL[fallback][2]
 
         else:
             print "This episode is not available in any format."
