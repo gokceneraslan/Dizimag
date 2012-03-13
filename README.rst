@@ -19,3 +19,5 @@ TODO:
 * Provide a way to choose between High/Low Resolution and Turkish/English subs.
 
 * Use iconImage and thumbnailImage of ListItems wisely.
+
+* Show name of the episodes
