@@ -4,8 +4,7 @@
        version="0.3.0"
        provider-name="Gökçen Eraslan">
   <requires>
-	<import addon="xbmc.gui"/>
-	<import addon="xbmc.plugin"/>
+	<import addon="xbmc.python"/>
   </requires>
 
   <extension point="xbmc.addon.metadata">
