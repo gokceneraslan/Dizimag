@@ -17,7 +17,7 @@ TODO:
 ~~~~~
 * Implement getting and saving user login information.
 
-* Categorize Turkish and English TV show in the first menu.
+* Categorize Turkish and English TV show in the first menu. (Done)
 
 * Find a way to hide fake episode entries and get rid of "Episode not found" error.
 
