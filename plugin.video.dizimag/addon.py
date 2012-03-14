@@ -76,6 +76,12 @@ def get_show_episode_info(showcode):
         return
 
     episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-[^>]*?-dizi\.html\">([^<]*?)</a>' % (showcode), showpage)
+
+    #FIXME: some shows does not have episode names. Must write a better regexp here.
+    #Set third group as an empty string using a dummy () grouping to make the return value consistent, pff.
+    if not episode_urls:
+        episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle[^>]*?-()dizi\.html\">' % (showcode), showpage)
+
     return sorted(list(set(episode_urls)), cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
  
 def parse_show_rss(rss):
@@ -206,8 +212,9 @@ def display_show_episodes(params):
     for epno, epname in sorted(eplist, reverse = True):
         epno = str(epno)
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
+        epname = "(%s)" % epname if epname else ""
 
-        create_list_item("%s - S%sE%s - %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage)
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
