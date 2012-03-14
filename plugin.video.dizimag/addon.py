@@ -5,6 +5,10 @@ import xbmc, xbmcaddon, xbmcgui, xbmcplugin
 import urllib, urlparse, urllib2, HTMLParser, sys, re, xml.dom.minidom as md
 
 SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js"
+SHOWNAMES_URL2 = "http://dizimag.com/_diziliste.asp"
+
+TURKISHSHOW, ENGLISHSHOW = range(2)
+
 SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=%(lang)d&x=%(code)s&d.xml"
 SHOW_URL = "http://www.dizimag.com/%(show)s"
 SHOW_THUMBNAIL_URL = "http://i.dizimag.com/dizi/%(show)s.jpg"
@@ -56,6 +60,7 @@ def open_url(url):
     return data
 
 def get_show_names():
+    """
     djs = open_url(SHOWNAMES_URL)
 
     if not djs:
@@ -63,7 +68,18 @@ def get_show_names():
         return
         
     show_names = re.findall(r'd: \"(.*?)\", s: \"(.*?)\"', djs)
-    return show_names
+    """
+
+    listpage = open_url(SHOWNAMES_URL2)
+
+    if not listpage:
+        print 'Page not found...'
+        return
+ 
+    shownames = re.findall(r'<a *?href="/([a-zA-Z0-9-]*?)" *?class="tdiz (.*?)">(.*?)</a>', listpage)
+    shownames = [(x[0], TURKISHSHOW if x[1] == "Yerli" else ENGLISHSHOW, x[2].decode("iso-8859-9").encode("utf-8")) for x in shownames]
+
+    return shownames
 
 def get_show_thumbnail_url(showcode):
     return SHOW_THUMBNAIL_URL % {'show': showcode}
@@ -149,8 +165,8 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
     return show
 
 def test():
-    for s in get_show_names():
-        print "*   Getting info for '%s'..." % s[0].decode("iso-8859-9")
+    for code, isEnglish, name in get_show_names():
+        print "*   Getting info for '%s'..." % name
         info = get_show_episode_info(s[1])
         for ses, ep in info:
             print get_show_video_urls(s[1], ses, ep)
@@ -165,8 +181,7 @@ def test():
 
 def display_mainmenu():
     shownames = get_show_names()
-    for name, code in shownames:
-        name = name.decode("iso-8859-9").encode("utf-8")
+    for code, isEnglish, name in shownames:
         thumbimage = get_show_thumbnail_url(code)
         create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code))
         #create_list_item(name, create_xbmc_url(action="showEpisodes", name=name, showcode=code), thumbnailImage=thumbimage)
