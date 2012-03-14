@@ -22,8 +22,9 @@ WATCH_SHOW_NO_SUB_URL = "http://www.dizimag.com/%(show)s-%(season)s-sezon-%(epis
 # poor man's enum, hehe
 # Be careful: Types are in the order of choice
 WATCH_TYPE_TR_SUB_HD, WATCH_TYPE_TR_SUB, WATCH_TYPE_ENG_SUB, WATCH_TYPE_NO_SUB, = range(4)
-SUBTITLE_NONE, SUBTITLE_TURKISH, SUBTITLE_ENGLISH, = range(3)
 
+
+SUBTITLE_NONE, SUBTITLE_TURKISH, SUBTITLE_ENGLISH, = range(3)
 
 WATCH_URL = { 
               WATCH_TYPE_ENG_SUB:   (WATCH_SHOW_ENG_SUB_URL, SUBTITLE_ENGLISH, "Low resolution video with English subtitles"),  
@@ -37,13 +38,13 @@ __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
 __date__ = '03-14-2012'
 __version__ = '0.3.0'
-__settings__ = xbmcaddon.Addon( id = 'plugin.video.dizimag' )
+__settings__ = xbmcaddon.Addon(id = 'plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
 
 
 playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-player = xbmc.Player( xbmc.PLAYER_CORE_MPLAYER )
+player = xbmc.Player(xbmc.PLAYER_CORE_MPLAYER)
 
 def open_url(url):
     #print url
