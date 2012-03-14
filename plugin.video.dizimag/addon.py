@@ -204,7 +204,7 @@ def display_show_episodes(params):
     episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
     for e in sorted(eplist, reverse = True):
-        create_list_item("%s - S%sE%s - %s" % (name,season,str(e[0]).zfill(episodeStringWidth), e[1]), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=str(e[0])), thumbnailImage = thumbimage)
+        create_list_item("%s - S%sE%s - %s" % (name,season,str(e[0]).zfill(episodeStringWidth), e[1].decode("iso-8859-9").encode("utf-8")), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=str(e[0])), thumbnailImage = thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
