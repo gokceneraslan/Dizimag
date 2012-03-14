@@ -8,6 +8,11 @@ diozimag.com is a Turkish website for watching full episodes of both Turkish and
 
 Currently addon is only tested with xbmc 11.0 (Eden) Beta 2 in Fedora 17.
 
+How to install?
+~~~~~~~~~~~~~~~
+
+To install, first clone the repo using "git clone git://github.com/gokceneraslan/Dizimag.git" and then enter Dizimag directory and use "git archive HEAD -o $HOME/dizimag-addon.zip" command to prepare a .zip addon file. Then use "System -> Add-ons -> Install using zip file" path in XBMC to install the addon.
+
 TODO:
 ~~~~~
 * Implement getting and saving user login information.
@@ -16,8 +21,8 @@ TODO:
 
 * Find a way to hide fake episode entries and get rid of "Episode not found" error.
 
-* Provide a way to choose between High/Low Resolution and Turkish/English subs.
+* Provide a way to choose between High/Low Resolution and Turkish/English subs. (Done by bluesign)
 
 * Use iconImage and thumbnailImage of ListItems wisely.
 
-* Show name of the episodes
+* Show name of the episodes (Done by bluesign)
