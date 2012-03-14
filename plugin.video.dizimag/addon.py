@@ -2,7 +2,7 @@
 # See the file http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import xbmc, xbmcaddon, xbmcgui, xbmcplugin
-import urllib, urlparse, urllib2, sys, re, xml.dom.minidom as md
+import urllib, urlparse, urllib2, HTMLParser, sys, re, xml.dom.minidom as md
 
 SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js"
 SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=%(lang)d&x=%(code)s&d.xml"
@@ -203,8 +203,11 @@ def display_show_episodes(params):
     eplist = list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season)))
     episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
-    for e in sorted(eplist, reverse = True):
-        create_list_item("%s - S%sE%s - %s" % (name,season,str(e[0]).zfill(episodeStringWidth), e[1].decode("iso-8859-9").encode("utf-8")), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=str(e[0])), thumbnailImage = thumbimage)
+    for epno, epname in sorted(eplist, reverse = True):
+        epno = str(epno)
+        epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
+
+        create_list_item("%s - S%sE%s - %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
