@@ -32,7 +32,7 @@ __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
 __date__ = '03-14-2012'
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __settings__ = xbmcaddon.Addon( id = 'plugin.video.dizimag' )
 
 PLUGIN_ID = int(sys.argv[1])
