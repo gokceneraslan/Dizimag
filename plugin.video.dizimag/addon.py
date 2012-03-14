@@ -4,8 +4,8 @@
 import xbmc, xbmcaddon, xbmcgui, xbmcplugin
 import urllib, urlparse, urllib2, HTMLParser, sys, re, xml.dom.minidom as md
 
-SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js"
-SHOWNAMES_URL2 = "http://dizimag.com/_diziliste.asp"
+#SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js" # this does not provide info about the language of the tv show
+SHOWNAMES_URL = "http://dizimag.com/_diziliste.asp"
 
 TURKISHSHOW, ENGLISHSHOW = range(2)
 
@@ -70,7 +70,7 @@ def get_show_names():
     show_names = re.findall(r'd: \"(.*?)\", s: \"(.*?)\"', djs)
     """
 
-    listpage = open_url(SHOWNAMES_URL2)
+    listpage = open_url(SHOWNAMES_URL)
 
     if not listpage:
         print 'Page not found...'
