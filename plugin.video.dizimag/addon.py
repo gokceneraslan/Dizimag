@@ -172,11 +172,20 @@ def test():
 #### PLUGIN STUFF ####
 
 def display_main_menu():
+    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW))
+    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW))
+
+    xbmcplugin.endOfDirectory(PLUGIN_ID)
+
+def display_show_names_menu(params):
+    lang = params["language"][0]
+
     shownames = get_show_names()
-    for code, isEnglish, name in shownames:
-        thumbimage = get_show_thumbnail_url(code)
-        create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code))
-        #create_list_item(name, create_xbmc_url(action="showEpisodes", name=name, showcode=code), thumbnailImage=thumbimage)
+    for code, langcode, name in shownames:
+        if str(langcode) == lang:
+            thumbimage = get_show_thumbnail_url(code)
+            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code))
+            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code), thumbnailImage=thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
@@ -283,6 +292,7 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
 
 ACTION_HANDLERS = { "showEpisodes": display_show_episodes_menu,
                     "showSeasons" : display_show_seasons_menu,
+                    "showNames"   : display_show_names_menu,
                     "showVideo"   : display_show }
 
 params = urlparse.parse_qs(sys.argv[2][1:])
