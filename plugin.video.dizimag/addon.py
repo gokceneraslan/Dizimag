@@ -247,7 +247,7 @@ def display_show(params):
 def create_xbmc_url(**parameters):
     return "%s?%s" % (sys.argv[0], urllib.urlencode(parameters))
 
-def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = True):
+def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = True, fanart = None):
     if folder and not iconImage:
         iconImage = "DefaultFolder.png"
     elif not folder and not iconImage:
@@ -255,6 +255,12 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
 
     l = xbmcgui.ListItem(name, iconImage = iconImage, thumbnailImage = thumbnailImage )
     l.setInfo( type = "Video", infoLabels = { "Title": name } ) 
+
+    if not fanart:
+        l.setProperty('fanart_image',__settings__.getAddonInfo('fanart'))
+    else:
+        l.setProperty('fanart_image', fanart)
+
     xbmcplugin.addDirectoryItem(handle=PLUGIN_ID, url = url, listitem = l, isFolder = folder)
 
 
