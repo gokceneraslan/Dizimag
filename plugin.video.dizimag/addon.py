@@ -61,15 +61,6 @@ def open_url(url):
     return data
 
 def get_show_names():
-    """
-    djs = open_url(SHOWNAMES_URL)
-
-    if not djs:
-        print 'Page not found...'
-        return
-        
-    show_names = re.findall(r'd: \"(.*?)\", s: \"(.*?)\"', djs)
-    """
 
     listpage = open_url(SHOWNAMES_URL)
 
@@ -180,7 +171,7 @@ def test():
 
 #### PLUGIN STUFF ####
 
-def display_mainmenu():
+def display_main_menu():
     shownames = get_show_names()
     for code, isEnglish, name in shownames:
         thumbimage = get_show_thumbnail_url(code)
@@ -189,7 +180,7 @@ def display_mainmenu():
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
-def display_show_seasons(params):
+def display_show_seasons_menu(params):
     name = params["name"][0]
     code = params["showcode"][0]
 
@@ -209,7 +200,7 @@ def display_show_seasons(params):
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
    
-def display_show_episodes(params):
+def display_show_episodes_menu(params):
     name = params["name"][0]
     code = params["showcode"][0]
     season = params["season"][0]
@@ -290,13 +281,13 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
     xbmcplugin.addDirectoryItem(handle=PLUGIN_ID, url = url, listitem = l, isFolder = folder)
 
 
-ACTION_HANDLERS = { "showEpisodes": display_show_episodes,
-                    "showSeasons" : display_show_seasons,
+ACTION_HANDLERS = { "showEpisodes": display_show_episodes_menu,
+                    "showSeasons" : display_show_seasons_menu,
                     "showVideo"   : display_show }
 
 params = urlparse.parse_qs(sys.argv[2][1:])
 
 if len(params) == 0:
-    display_mainmenu()
+    display_main_menu()
 else:
     ACTION_HANDLERS[params['action'][0]](params)
