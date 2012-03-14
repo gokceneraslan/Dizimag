@@ -14,6 +14,15 @@ SHOW_URL = "http://www.dizimag.com/%(show)s"
 SHOW_THUMBNAIL_URL = "http://i.dizimag.com/dizi/%(show)s.jpg"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.1) Gecko/20100101 Firefox/10.0.1"
 
+#Recently added episodes
+#http://dizimag.com/_yenie.asp?a=1
+
+#Backgrounds
+#http://dizimag.com/_arkaplan.asp
+
+#Subtitle translation percentage
+#http://dizimag.com/_altyazi.asp
+
 WATCH_SHOW_TR_SUB_HD_URL = "http://www.dizimag.com/%(show)s-%(season)s-sezon-%(episode)s-bolum-720p-izle-dizi.html"
 WATCH_SHOW_TR_SUB_URL = "http://www.dizimag.com/%(show)s-%(season)s-sezon-%(episode)s-bolum-izle-dizi.html"
 WATCH_SHOW_ENG_SUB_URL = "http://www.dizimag.com/%(show)s-%(season)s-sezon-%(episode)s-bolum-subing-izle-dizi.html"
