@@ -174,6 +174,11 @@ def display_show_seasons(params):
     thumbimage = get_show_thumbnail_url(code)
 
     epinfo = get_show_episode_info(code)
+
+    if not epinfo:
+        xbmcgui.Dialog().ok("Error", "No seasons found...")
+        return
+
     seasonSet = list(set([int(x[0]) for x in epinfo]))
     seasonStringWidth = len(str(max(seasonSet)))
 
@@ -190,6 +195,11 @@ def display_show_episodes(params):
     thumbimage = get_show_thumbnail_url(code)
 
     epinfo = get_show_episode_info(code)
+
+    if not epinfo:
+        xbmcgui.Dialog().ok("Error", "No seasons found...")
+        return
+
     eplist = list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season)))
     episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
@@ -212,8 +222,7 @@ def display_show(params):
     iconImage = thumb = get_show_thumbnail_url(code)
 
     if not urls:
-        dia = xbmcgui.Dialog()
-        dia.ok("Error", "Episode not found...")
+        xbmcgui.Dialog().ok("Error", "Episode not found...")
         return
 
 
