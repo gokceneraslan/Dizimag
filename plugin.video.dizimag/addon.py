@@ -51,6 +51,8 @@ __settings__ = xbmcaddon.Addon(id = 'plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
 
+turkish_fanart = os.path.join( __settings__.getAddonInfo( 'path' ), 'resources', 'media', 'turkish-fanart.jpg' )
+english_fanart = os.path.join( __settings__.getAddonInfo( 'path' ), 'resources', 'media', 'english-fanart.jpg' )
 
 playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 player = xbmc.Player(xbmc.PLAYER_CORE_MPLAYER)
@@ -181,8 +183,8 @@ def test():
 #### PLUGIN STUFF ####
 
 def display_main_menu():
-    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW))
-    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW))
+    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW), fanart = turkish_fanart)
+    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW), fanart = english_fanart)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
@@ -192,17 +194,20 @@ def display_show_names_menu(params):
     shownames = get_show_names()
     for code, langcode, name in shownames:
         if str(langcode) == lang:
+            fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
             thumbimage = get_show_thumbnail_url(code)
-            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code))
-            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code), thumbnailImage=thumbimage)
+            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart)
+            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), thumbnailImage=thumbimage)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
 def display_show_seasons_menu(params):
     name = params["name"][0]
     code = params["showcode"][0]
+    lang = params["language"][0]
 
     thumbimage = get_show_thumbnail_url(code)
+    fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
     epinfo = get_show_episode_info(code)
 
@@ -214,7 +219,7 @@ def display_show_seasons_menu(params):
     seasonStringWidth = len(str(max(seasonSet)))
 
     for s in sorted(seasonSet, reverse = True):
-        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s), thumbnailImage = thumbimage)
+        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), thumbnailImage = thumbimage, fanart = fanart)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
    
@@ -222,8 +227,10 @@ def display_show_episodes_menu(params):
     name = params["name"][0]
     code = params["showcode"][0]
     season = params["season"][0]
+    lang = params["language"][0]
     
     thumbimage = get_show_thumbnail_url(code)
+    fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
     epinfo = get_show_episode_info(code)
 
@@ -239,7 +246,7 @@ def display_show_episodes_menu(params):
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
-        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage)
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
