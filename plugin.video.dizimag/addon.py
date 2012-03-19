@@ -187,23 +187,25 @@ def test():
 #### PLUGIN STUFF ####
 
 def display_main_menu():
-    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW), fanart = turkish_fanart)
-    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW), fanart = english_fanart)
+    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW), fanart = turkish_fanart, totalItems = 2)
+    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW), fanart = english_fanart, totalItems = 2)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
 
 def display_show_names_menu(params):
     lang = params["language"][0]
 
-    shownames = get_show_names()
+    shownames = [ x for x in get_show_names() if str(x[1]) == lang]
+    showlen = len(shownames)
+
     for code, langcode, name in shownames:
         if str(langcode) == lang:
             fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
             thumbimage = get_show_thumbnail_url(code)
             iconimage = get_show_avatar_url(code)
-            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage)
+            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, totalItems = showlen)
             # Eden beta crashes when thumbimage is used
-            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage)
+            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage, totalItems = showlen)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
@@ -222,11 +224,12 @@ def display_show_seasons_menu(params):
         xbmcgui.Dialog().ok("Error", "No seasons found...")
         return
 
-    seasonSet = list(set([int(x[0]) for x in epinfo]))
+    seasonSet = sorted(list(set([int(x[0]) for x in epinfo])), reverse = True)
+    lenSeasonSet = len(seasonSet)
     seasonStringWidth = len(str(max(seasonSet)))
 
-    for s in sorted(seasonSet, reverse = True):
-        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), iconImage = iconimage, thumbnailImage = thumbimage, fanart = fanart)
+    for s in seasonSet:
+        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), iconImage = iconimage, thumbnailImage = thumbimage, fanart = fanart, totalItems = lenSeasonSet)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
    
@@ -246,15 +249,16 @@ def display_show_episodes_menu(params):
         xbmcgui.Dialog().ok("Error", "No seasons found...")
         return
 
-    eplist = list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season)))
+    eplist = sorted(list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season))), reverse = True)
+    lenEpList = len(eplist)
     episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
-    for epno, epname in sorted(eplist, reverse = True):
+    for epno, epname in eplist:
         epno = str(epno)
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
-        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage)
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEplist)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
@@ -297,7 +301,7 @@ def display_show(params):
 def create_xbmc_url(**parameters):
     return "%s?%s" % (sys.argv[0], urllib.urlencode(parameters))
 
-def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = True, fanart = None):
+def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = True, fanart = None, totalItems = 0):
     if folder and not iconImage:
         iconImage = "DefaultFolder.png"
     elif not folder and not iconImage:
@@ -311,7 +315,7 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
     else:
         l.setProperty('fanart_image', fanart)
 
-    xbmcplugin.addDirectoryItem(handle=PLUGIN_ID, url = url, listitem = l, isFolder = folder)
+    xbmcplugin.addDirectoryItem(handle=PLUGIN_ID, url = url, listitem = l, isFolder = folder, totalItems = totalItems)
 
 
 ACTION_HANDLERS = { "showEpisodes": display_show_episodes_menu,
