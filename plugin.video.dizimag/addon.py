@@ -12,6 +12,7 @@ TURKISHSHOW, ENGLISHSHOW = range(2)
 SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=%(lang)d&x=%(code)s&d.xml"
 SHOW_URL = "http://www.dizimag.com/%(show)s"
 SHOW_THUMBNAIL_URL = "http://i.dizimag.com/dizi/%(show)s.jpg"
+SHOW_AVATAR_URL = "http://i.dizimag.com/dizi/%(show)s-avatar.jpg"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.1) Gecko/20100101 Firefox/10.0.1"
 
 #Recently added episodes
@@ -86,6 +87,9 @@ def get_show_names():
 
 def get_show_thumbnail_url(showcode):
     return SHOW_THUMBNAIL_URL % {'show': showcode}
+
+def get_show_avatar_url(showcode):
+    return SHOW_AVATAR_URL % {'show': showcode}
 
 def get_show_episode_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
@@ -196,10 +200,12 @@ def display_show_names_menu(params):
         if str(langcode) == lang:
             fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
             thumbimage = get_show_thumbnail_url(code)
-            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart)
-            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), thumbnailImage=thumbimage)
+            iconimage = get_show_avatar_url(code)
+            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage)
+            # Eden beta crashes when thumbimage is used
+            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage)
 
-    xbmcplugin.endOfDirectory(PLUGIN_ID)
+    xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
 def display_show_seasons_menu(params):
     name = params["name"][0]
@@ -207,6 +213,7 @@ def display_show_seasons_menu(params):
     lang = params["language"][0]
 
     thumbimage = get_show_thumbnail_url(code)
+    iconimage = get_show_avatar_url(code)
     fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
     epinfo = get_show_episode_info(code)
@@ -219,9 +226,9 @@ def display_show_seasons_menu(params):
     seasonStringWidth = len(str(max(seasonSet)))
 
     for s in sorted(seasonSet, reverse = True):
-        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), thumbnailImage = thumbimage, fanart = fanart)
+        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), iconImage = iconimage, thumbnailImage = thumbimage, fanart = fanart)
 
-    xbmcplugin.endOfDirectory(PLUGIN_ID)
+    xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
    
 def display_show_episodes_menu(params):
     name = params["name"][0]
@@ -230,6 +237,7 @@ def display_show_episodes_menu(params):
     lang = params["language"][0]
     
     thumbimage = get_show_thumbnail_url(code)
+    iconimage = get_show_avatar_url(code)
     fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
     epinfo = get_show_episode_info(code)
@@ -246,9 +254,9 @@ def display_show_episodes_menu(params):
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
-        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart)
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage)
 
-    xbmcplugin.endOfDirectory(PLUGIN_ID)
+    xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
 def display_show(params):
     name = params["name"][0]
@@ -295,7 +303,7 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
     elif not folder and not iconImage:
         iconImage = "DefaultVideo.png"
 
-    l = xbmcgui.ListItem(name, iconImage = iconImage, thumbnailImage = thumbnailImage )
+    l = xbmcgui.ListItem(name, iconImage = iconImage, thumbnailImage = thumbnailImage)
     l.setInfo( type = "Video", infoLabels = { "Title": name } ) 
 
     if not fanart:
