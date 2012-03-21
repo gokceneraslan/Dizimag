@@ -134,9 +134,9 @@ def parse_html_show_table(tree):
         episode_no = episode["class"].split()[0].split("x")[1]
 
         if len(a_elements) > 2:
-            episode_name = a_elements[2].text
+            episode_name = HTMLParser.HTMLParser().unescape(a_elements[2].text.encode("utf-8"))
         else:
-            episode_name = ""
+            episode_name = u""
 
         episode_watch_types = []
 
@@ -289,7 +289,6 @@ def display_show_episodes_menu(params):
 
     for epno, epname, epwatchtypes in eplist:
         epno = str(epno)
-        epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
         create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno, watchtypes=epwatchtypes), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEpList)
