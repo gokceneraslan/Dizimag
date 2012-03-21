@@ -258,7 +258,7 @@ def display_show_episodes_menu(params):
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
-        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEplist)
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEpList)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
