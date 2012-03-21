@@ -3,6 +3,7 @@
 
 import xbmc, xbmcaddon, xbmcgui, xbmcplugin
 import urllib, urlparse, urllib2, HTMLParser, os, sys, re, xml.dom.minidom as md
+from BeautifulSoup import BeautifulSoup as BS
 
 #SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js" # this does not provide info about the language of the tv show
 SHOWNAMES_URL = "http://dizimag.com/_diziliste.asp"
@@ -91,6 +92,11 @@ def get_show_thumbnail_url(showcode):
 def get_show_avatar_url(showcode):
     return SHOW_AVATAR_URL % {'show': showcode}
 
+
+def get_show_season_info(showcode):
+    showpage = open_url(SHOW_URL % {'show': showcode})
+    return parse_html_get_season_info(showpage)
+
 def get_show_episode_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
 
@@ -98,14 +104,9 @@ def get_show_episode_info(showcode):
         print "No such page exists..."
         return
 
-    episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle-[^>]*?-dizi\.html\">([^<]*?)</a>' % (showcode), showpage)
+    episodes = parse_html_show_table(showpage)
 
-    #FIXME: some shows does not have episode names. Must write a better regexp here.
-    #Set third group as an empty string using a dummy () grouping to make the return value consistent, pff.
-    if not episode_urls:
-        episode_urls = re.findall(r'href="/%s-(\d+?)-sezon-(\d+?)-bolum-[a-zA-Z0-9-]*?izle[^>]*?-()dizi\.html\">' % (showcode), showpage)
-
-    return sorted(list(set(episode_urls)), cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
+    return sorted(episodes, cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
  
 def parse_show_rss(rss):
     tree = md.parseString(rss)
@@ -114,6 +115,47 @@ def parse_show_rss(rss):
     video_thumbnails = filter(lambda x: x, (x.getAttribute("url") for x in tree.getElementsByTagName("media:thumbnail")))
 
     return (video_urls, video_thumbnails)
+
+def parse_html_get_season_info(tree):
+    tree = BS(tree)
+    divs = tree.body.findAll(lambda x: x.name == "div" and "dizi_list" in x.get("class", "").split())
+    return [HTMLParser.HTMLParser().unescape(x.text) for x in divs]
+
+def parse_html_show_table(tree):
+    tree = BS(tree)
+    show_elements = tree.body.findAll(lambda x: x.name == "td" and "blmin" in x.get("class", "").split())
+    result = []
+
+    for episode in show_elements:
+        a_elements = episode.findAll("a")
+        img_elements = episode.findAll("img")
+
+        episode_season = episode["class"].split()[0].split("x")[0][1:]
+        episode_no = episode["class"].split()[0].split("x")[1]
+
+        if len(a_elements) > 2:
+            episode_name = a_elements[2].text
+        else:
+            episode_name = ""
+
+        episode_watch_types = []
+
+        for img in img_elements:
+            if "tlb_tr" in img.get("class", "").split(): #yes there is a mistake in dizimag's code tlb_tr <-> tlb_eng
+                episode_watch_types.append(str(WATCH_TYPE_ENG_SUB))
+            elif "tlb_nosub" in img.get("class", "").split():
+                episode_watch_types.append(str(WATCH_TYPE_NO_SUB))
+            elif "tlb_hd" in img.get("class", "").split():
+                episode_watch_types.append(str(WATCH_TYPE_TR_SUB_HD))
+            elif "tlb_eng" in img.get("class", "").split():
+                episode_watch_types.append(str(WATCH_TYPE_TR_SUB))
+
+        if not episode_watch_types:
+            continue
+
+        result.append([episode_season, episode_no, episode_name, "-".join(episode_watch_types)])
+
+    return result
 
 def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SUB_HD):
 
@@ -171,18 +213,6 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
 
     return show
 
-def test():
-    for code, isEnglish, name in get_show_names():
-        print "*   Getting info for '%s'..." % name
-        info = get_show_episode_info(s[1])
-        for ses, ep in info:
-            print get_show_video_urls(s[1], ses, ep)
-            print "*********************************"
-
-    print get_show_video_urls("how-i-met-your-mother", "3", "3", WATCH_TYPE_TR_SUB)
-    print get_show_video_urls("spartacus-vengeance", "2", "1")
-    get_show_episode_info("spartacus-vengeance")
-
 
 #### PLUGIN STUFF ####
 
@@ -218,18 +248,17 @@ def display_show_seasons_menu(params):
     iconimage = get_show_avatar_url(code)
     fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
-    epinfo = get_show_episode_info(code)
+    season_info = get_show_season_info(code)
+    season_info = sorted(season_info, key=lambda x: int(x.split(".")[0]), reverse = True)
 
-    if not epinfo:
+    if not season_info:
         xbmcgui.Dialog().ok("Error", "No seasons found...")
         return
 
-    seasonSet = sorted(list(set([int(x[0]) for x in epinfo])), reverse = True)
-    lenSeasonSet = len(seasonSet)
-    seasonStringWidth = len(str(max(seasonSet)))
+    seasonStringWidth = len(max(season_info, key=lambda x: int(x.split(".")[0])))
 
-    for s in seasonSet:
-        create_list_item("%s - Season %s" % (name, str(s).zfill(seasonStringWidth)), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s, language=lang), iconImage = iconimage, thumbnailImage = thumbimage, fanart = fanart, totalItems = lenSeasonSet)
+    for s in season_info:
+        create_list_item("%s - %s" % (name.decode("utf-8"), s), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=s.split(".")[0], language=lang), iconImage = iconimage, thumbnailImage = thumbimage, fanart = fanart, totalItems = len(season_info))
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
    
@@ -246,19 +275,28 @@ def display_show_episodes_menu(params):
     epinfo = get_show_episode_info(code)
 
     if not epinfo:
-        xbmcgui.Dialog().ok("Error", "No seasons found...")
+        xbmcgui.Dialog().ok("Error", "No episodes found for this season.")
         return
 
-    eplist = sorted(list(set(((int(x[1]),x[2]) for x in epinfo if x[0] == season))), reverse = True)
+    eplist = sorted(list(set(((int(x[1]),x[2],x[3]) for x in epinfo if x[0] == season))), reverse = True)
+
+    if not eplist:
+        xbmcgui.Dialog().ok("Error", "No episodes found for this season.")
+        return
+
     lenEpList = len(eplist)
     episodeStringWidth =  len(str(max(eplist, key=lambda x: x[0])[0]))
 
-    for epno, epname in eplist:
+    for epno, epname, epwatchtypes in eplist:
         epno = str(epno)
         epname = HTMLParser.HTMLParser().unescape(epname.decode("iso-8859-9").encode("utf-8"))
         epname = "(%s)" % epname if epname else ""
 
+<<<<<<< HEAD
+        create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno, watchtypes=epwatchtypes), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEpList)
+=======
         create_list_item("%s - S%sE%s %s" % (name, season, epno.zfill(episodeStringWidth), epname), create_xbmc_url(action="showVideo", name=name, showcode=code, season=season, episode=epno), thumbnailImage = thumbimage, fanart = fanart, iconImage = iconimage, totalItems = lenEpList)
+>>>>>>> 92af570a2ed54b0ef043a9af77d36119abec1df9
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
@@ -267,12 +305,23 @@ def display_show(params):
     code = params["showcode"][0]
     season = params["season"][0]
     episode = params["episode"][0]
+    watchtypes = [int(x) for x in params["watchtypes"][0].split("-")]
 
-    qualityRequested = xbmcgui.Dialog().select("Quality", [ WATCH_URL[key][2] for key in sorted(WATCH_URL.keys()) ])
-    if qualityRequested==-1: 
+    if len(watchtypes) > 1:
+        selected_quality= xbmcgui.Dialog().select("Quality", [ WATCH_URL[key][2] for key in sorted(watchtypes) ])
+
+        if selected_quality == -1: 
+            return
+
+    elif len(watchtypes) == 1:
+        selected_quality = watchtypes[0]
+
+    else:
+        xbmcgui.Dialog().ok("Error", "Could not find an appropriate quality.")
         return
+        
 
-    urls = get_show_video_urls(code, season, episode, qualityRequested)
+    urls = get_show_video_urls(code, season, episode, selected_quality)
     iconImage = thumb = get_show_thumbnail_url(code)
 
     if not urls:
