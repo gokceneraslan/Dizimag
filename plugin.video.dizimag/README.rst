@@ -19,10 +19,10 @@ TODO:
 
 * Categorize Turkish and English TV show in the first menu. (Done)
 
-* Find a way to hide fake episode entries and get rid of "Episode not found" error.
+* Find a way to hide fake episode entries and get rid of "Episode not found" error. (Done)
 
 * Provide a way to choose between High/Low Resolution and Turkish/English subs. (Done by bluesign)
 
-* Use iconImage and thumbnailImage of ListItems wisely.
+* Use iconImage and thumbnailImage of ListItems wisely. (Done)
 
 * Show name of the episodes (Done by bluesign)
