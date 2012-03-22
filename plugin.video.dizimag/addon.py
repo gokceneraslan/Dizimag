@@ -391,7 +391,7 @@ def display_show(params):
 
     playlist.clear()
     for i, video in enumerate(video_urls):
-        listitem = xbmcgui.ListItem('Episode %s Part %s' % (episode, (i+1)))
+        listitem = xbmcgui.ListItem('%s S%sE%s Part %s' % (name, season, episode, (i+1)))
         listitem.setInfo('video', {'Title': name})
         playlist.add(url=video, listitem=listitem)
 
