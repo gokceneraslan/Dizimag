@@ -17,7 +17,8 @@ SHOW_AVATAR_URL = "http://i.dizimag.com/dizi/%(show)s-avatar.jpg"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.1) Gecko/20100101 Firefox/10.0.1"
 
 #Recently added episodes
-#http://dizimag.com/_yenie.asp?a=1
+RECENTLY_ADDED_EDISODES_URL = "http://dizimag.com/_yenie.asp?a=%(pageno)s"
+RECENTLY_ADDED_EPISODES_PAGE_MAX = 4
 
 #Backgrounds
 #http://dizimag.com/_arkaplan.asp
@@ -48,7 +49,7 @@ __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
 __date__ = '03-14-2012'
-__version__ = '0.3.0'
+__version__ = '0.5.0'
 __settings__ = xbmcaddon.Addon(id = 'plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
@@ -92,10 +93,16 @@ def get_show_thumbnail_url(showcode):
 def get_show_avatar_url(showcode):
     return SHOW_AVATAR_URL % {'show': showcode}
 
-
 def get_show_season_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
     return parse_html_get_season_info(showpage)
+
+def get_recently_added_info():
+    result = []
+    for i in range(1, int(RECENTLY_ADDED_EPISODES_PAGE_MAX)+1):
+        result.extend(parse_recently_added_page(open_url(RECENTLY_ADDED_EDISODES_URL % {"pageno": str(i)})))
+
+    return result
 
 def get_show_episode_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
@@ -154,6 +161,26 @@ def parse_html_show_table(tree):
             continue
 
         result.append([episode_season, episode_no, episode_name, "-".join(episode_watch_types)])
+
+    return result
+
+def parse_recently_added_page(tree):
+    tree = BS(tree)
+    episodes = tree.findAll('a')
+    result = []
+
+    for episode in episodes:
+        showre = re.match(r"/(.*?)-([0-9]+?)-sezon-([0-9]+?)-bolum-.*?\.html", episode.get("href", ""))
+        if showre and len(showre.groups()) == 3:
+            showcode = showre.group(1)
+            season = showre.group(2)
+            no = showre.group(3)
+            showname = episode.span.h1.text.encode("utf-8")
+            #season = episode.span.contents[1].split()[0][:-1]
+            #no = episode.span.contents[1].split()[2][:-1]
+            result.append((showcode, showname, season, no))
+        else:
+            continue
 
     return result
 
@@ -217,10 +244,25 @@ def get_show_video_urls(showcode, season, episode, watch_type = WATCH_TYPE_TR_SU
 #### PLUGIN STUFF ####
 
 def display_main_menu():
-    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW), fanart = turkish_fanart, totalItems = 2)
-    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW), fanart = english_fanart, totalItems = 2)
+    create_list_item("Recently added TV Shows", create_xbmc_url(action="showRecentlyAdded"), totalItems = 3)
+    create_list_item("Turkish TV Shows", create_xbmc_url(action="showNames", language=TURKISHSHOW), fanart = turkish_fanart, totalItems = 3)
+    create_list_item("English TV Shows", create_xbmc_url(action="showNames", language=ENGLISHSHOW), fanart = english_fanart, totalItems = 3)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID)
+
+def display_recently_added_menu(params):
+    recents = get_recently_added_info()
+    if not recents:
+        xbmcgui.Dialog().ok("Error", "Recently added episodes not found.")
+        return
+    l = len(recents)
+
+    for code, name, season, episodeno in recents:
+        iconimage = get_show_avatar_url(code)
+        thumbimage = get_show_thumbnail_url(code)
+        create_list_item("%s - S%sE%s" % (name, season, episodeno), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=season, autoplayepisode=episodeno, language=ENGLISHSHOW), iconImage=iconimage, thumbnailImage = thumbimage, totalItems = l, folder = False)
+
+    xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
 def display_show_names_menu(params):
     lang = params["language"][0]
@@ -267,16 +309,29 @@ def display_show_episodes_menu(params):
     code = params["showcode"][0]
     season = params["season"][0]
     lang = params["language"][0]
+    autoplayepisode = params.get("autoplayepisode",[None])[0]
     
-    thumbimage = get_show_thumbnail_url(code)
-    iconimage = get_show_avatar_url(code)
-    fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
-
     epinfo = get_show_episode_info(code)
 
     if not epinfo:
         xbmcgui.Dialog().ok("Error", "No episodes found for this season.")
         return
+
+    # autoplayepisode parameter provides a way to quickly play recently added episodes
+    if autoplayepisode:
+        eplist = [x for x in epinfo if x[0] == season and x[1] == autoplayepisode]
+        if not eplist:
+            xbmcgui.Dialog().ok("Error", "Selected episode not found.")
+            return
+        
+        #TODO: find a clever way of jumping to display_show URL
+        params = urlparse.parse_qs(urllib.urlencode({"name": name, "showcode": code, "season": season, "episode": autoplayepisode, "watchtypes": eplist[0][3]}))
+        display_show(params)
+        return
+
+    thumbimage = get_show_thumbnail_url(code)
+    iconimage = get_show_avatar_url(code)
+    fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
 
     eplist = sorted(list(set(((int(x[1]),x[2],x[3]) for x in epinfo if x[0] == season))), reverse = True)
 
@@ -336,7 +391,7 @@ def display_show(params):
 
     playlist.clear()
     for i, video in enumerate(video_urls):
-        listitem = xbmcgui.ListItem('Episode %s Part %s' % (episode, (i+1)))
+        listitem = xbmcgui.ListItem('%s S%sE%s Part %s' % (name, season, episode, (i+1)))
         listitem.setInfo('video', {'Title': name})
         playlist.add(url=video, listitem=listitem)
 
@@ -362,10 +417,11 @@ def create_list_item(name, url, iconImage = "", thumbnailImage = "", folder = Tr
     xbmcplugin.addDirectoryItem(handle=PLUGIN_ID, url = url, listitem = l, isFolder = folder, totalItems = totalItems)
 
 
-ACTION_HANDLERS = { "showEpisodes": display_show_episodes_menu,
-                    "showSeasons" : display_show_seasons_menu,
-                    "showNames"   : display_show_names_menu,
-                    "showVideo"   : display_show }
+ACTION_HANDLERS = { "showEpisodes"     : display_show_episodes_menu,
+                    "showSeasons"      : display_show_seasons_menu,
+                    "showNames"        : display_show_names_menu,
+                    "showRecentlyAdded": display_recently_added_menu,
+                    "showVideo"        : display_show }
 
 params = urlparse.parse_qs(sys.argv[2][1:])
 
