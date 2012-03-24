@@ -83,7 +83,7 @@ def get_show_names():
         return
  
     shownames = re.findall(r'<a *?href="/([a-zA-Z0-9-]*?)" *?class="tdiz (.*?)">(.*?)</a>', listpage)
-    shownames = [(x[0], TURKISHSHOW if x[1].lower() == "erli" else ENGLISHSHOW, x[2].decode("iso-8859-9").encode("utf-8")) for x in shownames]
+    shownames = [(x[0], TURKISHSHOW if x[1].lower() == "yerli" else ENGLISHSHOW, x[2].decode("iso-8859-9").encode("utf-8")) for x in shownames]
 
     return shownames
 
