@@ -260,7 +260,7 @@ def display_recently_added_menu(params):
     for code, name, season, episodeno in recents:
         iconimage = get_show_avatar_url(code)
         thumbimage = get_show_thumbnail_url(code)
-        create_list_item("%s - S%sE%s" % (name, season, episodeno), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=season, autoplayepisode=episodeno, language=ENGLISHSHOW), iconImage=iconimage, thumbnailImage = thumbimage, totalItems = l, folder = False)
+        create_list_item("%s - S%sE%s" % (name.decode("utf-8"), season, episodeno), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=season, autoplayepisode=episodeno, language=ENGLISHSHOW), iconImage=iconimage, thumbnailImage = thumbimage, totalItems = l, folder = False)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
