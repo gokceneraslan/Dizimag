@@ -40,7 +40,20 @@ Use "System -> Add-ons -> Install from zip file" path in XBMC to install the add
 
 TODO:
 ~~~~~
-* Implement getting and saving user login information.
+
+* Implement getting & saving user login information, and member features.
+
+* Implement a Caterogies menu just like the one in the website.
+
+* Hide fake seasons of some show and fix occasional "No episodes found" error.
+
+* Display the date of the next episode. (Another website like `epguides <epguides.com>`_ may be used)
+
+* Add information (photos, summaries, cast etc.) about shows and episodes (maybe a context Info menu) (`TVDB python api <https://github.com/dbr/tvdb_api>`_ may be used) 
+
+
+Done:
+~~~~~
 
 * Categorize Turkish and English TV show in the first menu. **(Done)**
 
