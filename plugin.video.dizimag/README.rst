@@ -14,22 +14,22 @@ How to install?
 1. Getting the .zip file
 ************************
 
-    a) To install stable versions use `Downloads section <https://github.com/gokceneraslan/Dizimag/downloads>`_ to download latest .zip file.
+* To install stable versions use `Downloads section <https://github.com/gokceneraslan/Dizimag/downloads>`_ to download latest .zip file.
 
 
-    b) To install git snapshots, first clone the repo using :
+* To install git snapshots, first clone the repo using :
 
-        :: 
+  :: 
 
-            git clone git://github.com/gokceneraslan/Dizimag.git
+    git clone git://github.com/gokceneraslan/Dizimag.git
 
-     and then enter Dizimag directory and use:
+  and then enter Dizimag directory and use:
 
-        ::
+  ::
 
-            git archive HEAD -o $HOME/dizimag-addon.zip
+    git archive HEAD -o $HOME/dizimag-addon.zip
 
-     command to prepare a .zip addon file. 
+  command to prepare a .zip addon file. 
 
 
 2.Installing .zip file
