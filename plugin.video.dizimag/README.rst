@@ -4,7 +4,7 @@ Dizimag addon for XBMC
 What is Dizimag addon for XBMC?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-diozimag.com is a Turkish website for watching full episodes of both Turkish and English popular TV shows. This is a XBMC addon to watch TV shows presented in dizimag.com.
+`Dizimag <http://www.dizimag.com>`_ is a Turkish website for watching full episodes of both Turkish and English popular TV shows. This is a XBMC addon to watch TV shows presented in dizimag.com.
 
 Currently addon is only tested with XBMC 11.0 Eden in Fedora 17.
 
