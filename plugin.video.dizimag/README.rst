@@ -32,7 +32,7 @@ How to install?
   command to prepare a .zip addon file. 
 
 
-2.Installing .zip file
+2. Installing .zip file
 **********************
 
 Use "System -> Add-ons -> Install from zip file" path in XBMC to install the addon.
