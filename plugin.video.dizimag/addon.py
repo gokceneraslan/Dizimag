@@ -275,9 +275,7 @@ def display_show_names_menu(params):
             fanart = turkish_fanart if int(lang) == TURKISHSHOW else english_fanart
             thumbimage = get_show_thumbnail_url(code)
             iconimage = get_show_avatar_url(code)
-            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, totalItems = showlen)
-            # Eden beta crashes when thumbimage is used
-            #create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage, totalItems = showlen)
+            create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage, totalItems = showlen)
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
