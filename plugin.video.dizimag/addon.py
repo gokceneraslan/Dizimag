@@ -49,7 +49,7 @@ __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
 __date__ = '03-14-2012'
-__version__ = '0.5.0'
+__version__ = '0.5.2'
 __settings__ = xbmcaddon.Addon(id = 'plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
@@ -119,6 +119,9 @@ def parse_show_rss(rss):
     tree = md.parseString(rss)
 
     video_urls = filter(lambda x: x, (x.getAttribute("url") for x in tree.getElementsByTagName("media:content")))
+    # normalize URL's. Some URL's include spaces etc. convert them to %XX representation
+    video_urls = map(lambda x: urllib.quote(x, safe="%/:=&?~#+!$,;'@()*[]"), video_urls)
+
     video_thumbnails = filter(lambda x: x, (x.getAttribute("url") for x in tree.getElementsByTagName("media:thumbnail")))
 
     return (video_urls, video_thumbnails)
