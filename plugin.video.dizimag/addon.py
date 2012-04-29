@@ -49,7 +49,7 @@ __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
 __date__ = '03-14-2012'
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 __settings__ = xbmcaddon.Addon(id = 'plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
@@ -116,7 +116,14 @@ def get_show_episode_info(showcode):
     return sorted(episodes, cmp = lambda x,y: cmp(int(x[0])*1000+int(x[1]), int(y[0])*1000+int(y[1])), reverse=True)
  
 def parse_show_rss(rss):
-    tree = md.parseString(rss)
+    try:
+        tree = md.parseString(rss)
+    except:
+        try:
+            # some rss files seem not well-formed, try to fix them
+            tree = md.parseString(rss.replace('&', '&amp;'))
+        except:
+            return (None, None)
 
     video_urls = filter(lambda x: x, (x.getAttribute("url") for x in tree.getElementsByTagName("media:content")))
     # normalize URL's. Some URL's include spaces etc. convert them to %XX representation
