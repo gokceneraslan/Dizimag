@@ -109,7 +109,7 @@ def get_show_episode_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
 
     if not showpage:
-        xbmcgui.Dialog().ok("Error", 'Page not found (%s)...' % showpage)
+        xbmcgui.Dialog().ok("Error", 'Page not found (%s)...' % SHOW_URL % {'show': showcode})
         return
 
     episodes = parse_html_show_table(showpage)
