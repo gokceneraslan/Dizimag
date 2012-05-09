@@ -66,12 +66,12 @@ def open_url(url):
         req = urllib2.Request( url )
         req.add_header('User-Agent', USER_AGENT)
         content = urllib2.urlopen( req )
-    except urllib2.HTTPError:
-        #print "URL (%s) not found..." % url
+        data = content.read()
+        content.close()
+    except:
+        print "URL (%s) not found..." % url
         return None
 
-    data = content.read()
-    content.close()
     return data
 
 def get_show_names():
@@ -79,7 +79,7 @@ def get_show_names():
     listpage = open_url(SHOWNAMES_URL)
 
     if not listpage:
-        print 'Page not found...'
+        xbmcgui.Dialog().ok("Error", 'Page not found (%s)...' % SHOWNAMES_URL)
         return
  
     shownames = re.findall(r'<a *?href="/([a-zA-Z0-9-]*?)" *?class="tdiz (.*?)">(.*?)</a>', listpage)
@@ -95,7 +95,8 @@ def get_show_avatar_url(showcode):
 
 def get_show_season_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
-    return parse_html_get_season_info(showpage)
+    if showpage:
+        return parse_html_get_season_info(showpage)
 
 def get_recently_added_info():
     result = []
@@ -108,7 +109,7 @@ def get_show_episode_info(showcode):
     showpage = open_url(SHOW_URL % {'show': showcode})
 
     if not showpage:
-        print "No such page exists..."
+        xbmcgui.Dialog().ok("Error", 'Page not found (%s)...' % showpage)
         return
 
     episodes = parse_html_show_table(showpage)
