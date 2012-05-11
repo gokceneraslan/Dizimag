@@ -273,6 +273,7 @@ def display_recently_added_menu(params):
         thumbimage = get_show_thumbnail_url(code)
         create_list_item("%s - S%sE%s" % (name.decode("utf-8"), season, episodeno), create_xbmc_url(action="showEpisodes", name=name, showcode=code, season=season, autoplayepisode=episodeno, language=ENGLISHSHOW), iconImage=iconimage, thumbnailImage = thumbimage, totalItems = l, folder = False)
 
+    xbmc.executebuiltin("Container.SetViewMode(500)") # Switch to Thumbnail view
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
 def display_show_names_menu(params):
@@ -288,6 +289,7 @@ def display_show_names_menu(params):
             iconimage = get_show_avatar_url(code)
             create_list_item(name, create_xbmc_url(action="showSeasons", name=name, showcode=code, language=lang), fanart = fanart, iconImage=iconimage, thumbnailImage=thumbimage, totalItems = showlen)
 
+    xbmc.executebuiltin("Container.SetViewMode(500)") # Switch to Thumbnail view
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc = True)
 
 def display_show_seasons_menu(params):
