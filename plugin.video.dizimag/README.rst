@@ -47,7 +47,7 @@ TODO:
 
 * Hide fake seasons of some show and fix occasional "No episodes found" error.
 
-* Display the date of the next episode. (Another website like `epguides <epguides.com>`_ may be used)
+* Display the date of the next episode. (Another website like `epguides <http://epguides.com>`_ may be used)
 
 * Add information (photos, summaries, cast etc.) about shows and episodes (maybe a context Info menu) (`TVDB python api <https://github.com/dbr/tvdb_api>`_ may be used) 
 
