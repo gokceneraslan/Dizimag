@@ -197,7 +197,7 @@ def parse_show_rss(rss):
 def parse_html_get_season_info(tree):
     tree = BS(tree)
     divs = tree.body.findAll(lambda x:
-           x.name == "div" and "dizi_list" in x.get("class", "").split())
+           x.name == "a" and "dizi_list" in x.get("class", "").split())
 
     return [HTMLParser.HTMLParser().unescape(x.text) for x in divs]
 
