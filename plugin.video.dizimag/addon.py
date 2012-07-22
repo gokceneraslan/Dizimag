@@ -216,9 +216,9 @@ def parse_html_show_table(tree):
         episode_season = episode["class"].split()[0].split("x")[0][1:]
         episode_no = episode["class"].split()[0].split("x")[1]
 
-        if len(a_elements) > 2:
+        if len(a_elements) > 1:
             episode_name = HTMLParser.HTMLParser().unescape(
-                           a_elements[2].text.encode("utf-8"))
+                           a_elements[1].text.encode("utf-8"))
         else:
             episode_name = u""
 
