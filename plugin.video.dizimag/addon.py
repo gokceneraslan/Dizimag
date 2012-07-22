@@ -32,7 +32,9 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0.1)"
 " Gecko/20100101 Firefox/10.0.1"
 
 #Recently added episodes
-RECENTLY_ADDED_EDISODES_URL = "http://dizimag.com/_yenie.asp?a=%(pageno)s"
+RECENTLY_ADDED_EDISODES_URL = \
+                      "http://dizimag.com/servisler.asp?ser=yenie&a=%(pageno)s"
+
 RECENTLY_ADDED_EPISODES_PAGE_MAX = 4
 
 #Backgrounds
