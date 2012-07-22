@@ -20,7 +20,8 @@ from BeautifulSoup import BeautifulSoup as BS
 
 #SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js" # this does not provide info
                                             # about the language of the tv show
-SHOWNAMES_URL = "http://dizimag.com/_diziliste.asp"
+
+SHOWNAMES_URL = "http://dizimag.com/servisler.asp?ser=liste"
 
 TURKISHSHOW, ENGLISHSHOW = range(2)
 
@@ -340,12 +341,12 @@ def display_main_menu():
                      create_xbmc_url(action="showRecentlyAdded"),
                      totalItems=3)
 
-    create_list_item("Turkish TV Shows",
-                     create_xbmc_url(action="showNames", language=TURKISHSHOW),
-                     fanart=turkish_fanart,
-                     totalItems=3)
+    #create_list_item("Turkish TV Shows",
+    #                 create_xbmc_url(action="showNames", language=TURKISHSHOW),
+    #                 fanart=turkish_fanart,
+    #                 totalItems=3)
 
-    create_list_item("English TV Shows",
+    create_list_item("TV Shows",
                      create_xbmc_url(action="showNames", language=ENGLISHSHOW),
                      fanart=english_fanart,
                      totalItems=3)
