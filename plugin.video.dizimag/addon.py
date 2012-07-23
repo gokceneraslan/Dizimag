@@ -13,6 +13,8 @@ import HTMLParser
 import os
 import sys
 import re
+import string
+import base64
 
 import xml.dom.minidom as md
 
@@ -25,7 +27,6 @@ SHOWNAMES_URL = "http://dizimag.com/servisler.asp?ser=liste"
 
 TURKISHSHOW, ENGLISHSHOW = range(2)
 
-SHOWFLV_URL = "http://www.dizimag.com/_list.asp?dil=%(lang)d&x=%(code)s&d.xml"
 SHOW_URL = "http://www.dizimag.com/%(show)s"
 SHOW_THUMBNAIL_URL = "http://i.dizimag.com/dizi/%(show)s.jpg"
 SHOW_AVATAR_URL = "http://i.dizimag.com/dizi/%(show)s-avatar.jpg"
@@ -94,6 +95,18 @@ english_fanart = os.path.join(__settings__.getAddonInfo('path'),
 
 playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 player = xbmc.Player(xbmc.PLAYER_CORE_MPLAYER)
+
+
+def decode_base64(substring, encoded):
+    std_base64chars = \
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+    my_base64chars = \
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef%slmnopqrstuvwxyz0123456789+/"
+
+    encoded = encoded.translate(string.maketrans(my_base64chars % substring, \
+                                                 std_base64chars))
+    return base64.b64decode(encoded)
 
 
 def open_url(url):
@@ -168,30 +181,6 @@ def get_show_episode_info(showcode):
     cmp=lambda x, y:
     cmp(int(x[0]) * 1000 + int(x[1]), int(y[0]) * 1000 + int(y[1])),
     reverse=True)
-
-
-def parse_show_rss(rss):
-    try:
-        tree = md.parseString(rss)
-    except:
-        try:
-            # some rss files seem not well-formed, try to fix them
-            tree = md.parseString(rss.replace('&', '&amp;'))
-        except:
-            return (None, None)
-
-    video_urls = filter(lambda x: x, (x.getAttribute("url")
-                 for x in tree.getElementsByTagName("media:content")))
-
-    # normalize URL's. Some URL's include spaces etc.
-    # convert them to %XX representation
-    video_urls = map(lambda x: urllib.quote(x, safe="%/:=&?~#+!$,;'@()*[]"),
-                     video_urls)
-
-    video_thumbnails = filter(lambda x: x, (x.getAttribute("url")
-                     for x in tree.getElementsByTagName("media:thumbnail")))
-
-    return (video_urls, video_thumbnails)
 
 
 def parse_html_get_season_info(tree):
@@ -283,35 +272,25 @@ def get_show_video_urls(showcode,
         if not showpage:
             return
 
-        lowres = re.search(r'dusuk="(.*?)";', showpage)
-        highres = re.search(r'yuksek="(.*?)";', showpage)
+        duyuruid = re.search(r'duyuruid="(.*?)";', showpage)
 
-        if lowres:
-            lowres = lowres.group(1)
-        if highres:
-            highres = highres.group(1)
+        if duyuruid:
+            duyuruid = duyuruid.group(1)
 
-        if not (highres or lowres):
+        if not duyuruid:
             return
 
-        rss = open_url(SHOWFLV_URL % {'code': highres,
-                                      'lang': WATCH_URL[watch_type][1]})
+        duyuruid = "".join(re.findall(r'[ghijk]', duyuruid))
 
-        if not rss:
-            rss = open_url(SHOWFLV_URL % {'code': lowres,
-                                          'lang': WATCH_URL[watch_type][1]})
-            if not rss:
-                return
+        encoded_parts = re.findall(r"jQuery\.dzm\.d\('(.*?)'\)", showpage)
+        parts = [decode_base64(duyuruid, x) for x in encoded_parts]
 
-        video_urls, video_thumbnails = parse_show_rss(rss)
-        if not video_urls:
-            return
+        return parts
 
-        return video_urls, video_thumbnails
 
     show = get_show(watch_type)
 
-    if not show or not show[0]:
+    if not show:
         print "This episode is not available in format: '%s'" \
               % WATCH_URL[watch_type][2]
 
@@ -320,7 +299,7 @@ def get_show_video_urls(showcode,
                 continue  # tried before
 
             show = get_show(fallback)
-            if show and show[0]:
+            if show:
                 break
 
             else:
@@ -548,9 +527,7 @@ def display_show(params):
         xbmcgui.Dialog().ok("Error", "Episode not found...")
         return
 
-    video_urls, video_thumbnails = urls
-    if video_thumbnails:
-        iconImage = video_thumbnails[0]
+    video_urls = urls
 
     """
     for i, video in enumerate(video_urls):
