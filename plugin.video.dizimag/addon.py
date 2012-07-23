@@ -20,6 +20,15 @@ import xml.dom.minidom as md
 
 from BeautifulSoup import BeautifulSoup as BS
 
+
+__plugin__ = 'Dizimag'
+__author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
+__url__ = 'http://code.google.com/p/plugin/'
+__date__ = '03-14-2012'
+__version__ = '0.6'
+__settings__ = xbmcaddon.Addon(id='plugin.video.dizimag')
+
+
 #SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js" # this does not provide info
                                             # about the language of the tv show
 
@@ -77,13 +86,6 @@ WATCH_URL = {
               WATCH_TYPE_TR_SUB:    (WATCH_SHOW_TR_SUB_URL, SUBTITLE_TURKISH,
               "Low resolution video with Turkish subtitles")
               }
-
-__plugin__ = 'Dizimag'
-__author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
-__url__ = 'http://code.google.com/p/plugin/'
-__date__ = '03-14-2012'
-__version__ = '0.5.4'
-__settings__ = xbmcaddon.Addon(id='plugin.video.dizimag')
 
 PLUGIN_ID = int(sys.argv[1])
 
