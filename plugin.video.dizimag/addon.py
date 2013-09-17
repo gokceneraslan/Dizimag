@@ -15,12 +15,29 @@ import sys
 import re
 import string
 import base64
+import gzip
+import json
+from StringIO import StringIO
+from cookielib import CookieJar
 
 import xml.dom.minidom as md
 
 from BeautifulSoup import BeautifulSoup as BS
 
-
+REMOTE_DBG = 0
+# append pydev remote debugger
+if REMOTE_DBG:
+    # Make pydev debugger works for auto reload.
+    # Note pydevd module need to be copied in XBMC\system\python\Lib\pysrc
+    try:
+        import pysrc.pydevd as pydevd
+    # stdoutToServer and stderrToServer redirect stdout and stderr to eclipse console
+        pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+    except ImportError:
+        sys.stderr.write("Error: " +
+            "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
+        sys.exit(1)
+        
 __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
@@ -32,7 +49,8 @@ __settings__ = xbmcaddon.Addon(id='plugin.video.dizimag')
 #SHOWNAMES_URL = "http://i.dizimag.com/cache/d.js" # this does not provide info
                                             # about the language of the tv show
 
-SHOWNAMES_URL = "http://dizimag.com/servisler.asp?ser=liste"
+DOMAIN = "http://dizimag.com"
+SHOWNAMES_URL = "http://www.dizi-mag.com/cache/d.js"
 
 TURKISHSHOW, ENGLISHSHOW = range(2)
 
@@ -98,31 +116,50 @@ english_fanart = os.path.join(__settings__.getAddonInfo('path'),
 playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 player = xbmc.Player(xbmc.PLAYER_CORE_MPLAYER)
 
+cj = CookieJar()
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+opener.addheaders= [('User-Agent', USER_AGENT),('Accept-encoding', 'gzip'),('Referer', 'http://www.dizi-mag.com/')]
+urllib2.install_opener(opener)
 
-def decode_base64(substring, encoded):
+
+def decode_base64(alphabet, encoded):
     std_base64chars = \
              "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-    my_base64chars = \
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef%slmnopqrstuvwxyz0123456789+/"
+    return base64.b64decode(encoded.translate(string.maketrans(alphabet, std_base64chars)))
 
-    encoded = encoded.translate(string.maketrans(my_base64chars % substring, \
-                                                 std_base64chars))
-    return base64.b64decode(encoded)
+def get_redirect(lnk):
+    ## we should get nasty here since xbmc does not handle redirects
+    req=urllib2.Request(lnk)
+    req.add_header('Range','bytes=0-1')
+    try:
+        f=urllib2.urlopen(req)
+    except urllib2.HTTPError, error:
+        print error.read()
+    return f.geturl()
 
+class RedirectHandler(urllib2.HTTPRedirectHandler):     
+    def http_error_301(self, req, fp, code, msg, headers):  
+        result = urllib2.HTTPRedirectHandler.http_error_301( 
+            self, req, fp, code, msg, headers)              
+        result.status = code                                 
+        return result                                       
+
+    def http_error_302(self, req, fp, code, msg, headers):   
+        result = urllib2.HTTPRedirectHandler.http_error_302(
+            self, req, fp, code, msg, headers)              
+        result.status = code                                
+        return result      
 
 def open_url(url):
-    #print url
-    try:
-        req = urllib2.Request(url)
-        req.add_header('User-Agent', USER_AGENT)
-        content = urllib2.urlopen(req)
+    content = urllib2.urlopen(url)
+    if content.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO(content.read())
+        f = gzip.GzipFile(fileobj=buf)
+        data = f.read()
+    else:
         data = content.read()
-        content.close()
-    except:
-        print "URL (%s) not found..." % url
-        return None
-
+    content.close()
     return data
 
 
@@ -134,13 +171,11 @@ def get_show_names():
         xbmcgui.Dialog().ok("Error", 'Page not found (%s)...' % SHOWNAMES_URL)
         return
 
-    shownames = re.findall(
-    r'<a *?href="/([a-zA-Z0-9-]*?)" *?class="tdiz (.*?)">(.*?)</a>', listpage)
-
-    shownames = [(x[0],
-                TURKISHSHOW if x[1].lower() == "yerli" else ENGLISHSHOW,
-                x[2].decode("iso-8859-9").encode("utf-8"))
-                for x in shownames]
+    shownames=[]
+    for data in re.findall("\[(.*?)\]",listpage):
+        for row in re.findall("{.*?}",data):
+            scrapes=re.findall("d:\s\"(.*?)\",\ss:\s\"(.*?)\"",row)
+            shownames.append((scrapes[0][1],ENGLISHSHOW,scrapes[0][0]))
 
     return shownames
 
@@ -169,20 +204,18 @@ def get_recently_added_info():
     return result
 
 
-def get_show_episode_info(showcode):
-    showpage = open_url(SHOW_URL % {'show': showcode})
-
+def get_show_episode_info(showcode,season):
+    opener.addheaders.append(("X-Requested-With","XMLHttpRequest"))
+    showpage = open_url(DOMAIN+"/service/?ser=sezon&d="+showcode[1:]+"&s="+season)
+    opener.addheaders.pop()
     if not showpage:
         xbmcgui.Dialog().ok("Error", 'Page not found (%s)...'
                                             % SHOW_URL % {'show': showcode})
         return
-
-    episodes = parse_html_show_table(showpage)
-
+    episodes = parse_html_show_table("<html><body>"+showpage+"</body></html>")
     return sorted(episodes,
     cmp=lambda x, y:
-    cmp(int(x[0]) * 1000 + int(x[1]), int(y[0]) * 1000 + int(y[1])),
-    reverse=True)
+    cmp(int(x[0]) * 1000 + int(x[1]), int(y[0]) * 1000 + int(y[1])),reverse=True)
 
 
 def parse_html_get_season_info(tree):
@@ -204,8 +237,8 @@ def parse_html_show_table(tree):
         a_elements = episode.findAll("a")
         img_elements = episode.findAll("img")
 
-        episode_season = episode["class"].split()[0].split("x")[0][1:]
-        episode_no = episode["class"].split()[0].split("x")[1]
+        episode_season = episode["class"].split()[1].split("x")[0][1:]
+        episode_no = episode["class"].split()[1].split("x")[1]
 
         if len(a_elements) > 1:
             episode_name = HTMLParser.HTMLParser().unescape(
@@ -265,6 +298,72 @@ def get_show_video_urls(showcode,
                         episode,
                         watch_type=WATCH_TYPE_TR_SUB_HD):
 
+    def scrape_facebook_vid(showpage,t):
+        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage) 
+        
+        if alphabet:
+            alphabet = alphabet.group(1)
+
+        if not alphabet:
+            return
+
+        alphabet=re.findall(r'670x3=\["(.*?)"\]',showpage)[0].replace("x","u00").decode("raw_unicode_escape","ignore").encode("ascii")
+        
+
+        encoded_parts = re.findall(r"jQuery\.mp4\.d\('(.*?)'\)", showpage)
+        parts = [{"vid":get_redirect(decode_base64(alphabet, x)),"cookies":[]} for x in encoded_parts]
+
+        return parts
+    
+    def scrape_mailru_vid(showpage,t):
+        ru=re.findall('mail/(.*?)/_myvideo/(.*?)\&',showpage)
+        if len(ru)==0:
+            print "Error : Not a mail.ru video file"
+            return []
+        else:
+            js= json.loads(open_url("http://api.video.mail.ru/videos/mail/"+ru[0][0]+"/_myvideo/"+ru[0][1]+".json"))
+        parts=[]
+        cookies={}
+        for cookie in cj:
+            if "mail.ru" in cookie.domain:
+                cookies[cookie.name]=cookie.value
+
+        if "hd" in js['videos'].keys() and t==0: parts.append({"vid":js['videos']['hd'],"cookies":cookies})
+        if "sd" in js['videos'].keys() and not t==0: parts.append({"vid":js['videos']['sd'],"cookies":cookies})
+        return parts
+    
+    def scrape_vk_vid(showpage,t):
+        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage) 
+        
+        if alphabet:
+            alphabet = alphabet.group(1)
+
+        if not alphabet:
+            return
+
+        alphabet=re.findall(r'670x3=\["(.*?)"\]',showpage)[0].replace("x","u00").decode("raw_unicode_escape","ignore").encode("ascii")
+        
+
+        encoded_parts = re.findall(r"jQuery\.mp4\.d\(\"(.*?)\"\)", showpage)
+        pages = [decode_base64(alphabet, x) for x in encoded_parts]
+        
+        parts=[]
+        for i, page in enumerate(pages):
+            showpage=open_url(page)
+            ## having sd videos in the playlist will cause problems on multiparted videos but, for now lets go this way
+            regex = re.findall("url480=(.*?)&",showpage)
+            if len(regex)>0 and not t==0: parts.append({"vid":regex[0],"cookies":[]})
+            regex = re.findall("url360=(.*?)&",showpage)
+            if len(regex)>0 and not t==0: parts.append({"vid":regex[0],"cookies":[]})
+            regex = re.findall("url240=(.*?)&",showpage)
+            if len(regex)>0 and not t==0: parts.append({"vid":regex[0],"cookies":[]})
+            regex = re.findall("url720=(.*?)&",showpage)
+            if len(regex)>0 and not t==1: parts.append({"vid":regex[0],"cookies":[]})
+        
+        return parts
+
+    
+    
     def get_show(t):
 
         showpage = open_url(WATCH_URL[t][0] % {'show': showcode,
@@ -273,21 +372,32 @@ def get_show_video_urls(showcode,
 
         if not showpage:
             return
-
-        duyuruid = re.search(r'duyuruid="(.*?)";', showpage)
-
-        if duyuruid:
-            duyuruid = duyuruid.group(1)
-
-        if not duyuruid:
+        
+        sources=[("current server link","current servername")]
+        current_server=re.findall('\"trigger\ssmall\syellowa\sawesome\">Kaynak:\s(.*?)<img', showpage)
+        if len(current_server)>0 :
+            alternate_servers=re.findall('\"trigger\ssmall\syellowa\sawesome\"(.*?)bubbleInfo',showpage,re.DOTALL)
+            alternate_servers=re.findall('<a\shref=\"(.*?)\".*?gif>(.*?)</a>',alternate_servers[0],re.DOTALL)
+            sources=[("current server link",current_server[0])]
+            sources.extend(alternate_servers)
+        
+        if len(sources)==0:
             return
-
-        duyuruid = "".join(re.findall(r'[ghijk]', duyuruid))
-
-        encoded_parts = re.findall(r"jQuery\.dzm\.d\('(.*?)'\)", showpage)
-        parts = [decode_base64(duyuruid, x) for x in encoded_parts]
-
+        elif len(sources)==1:
+            index=0
+        elif len(sources)>1:
+            index=xbmcgui.Dialog().select("Source", [ unicode(x[1].decode("windows-1254")) for x in sources])
+        
+        if index>0:
+            showpage = open_url(DOMAIN+sources[index][0])
+        
+        for scrape_func in [scrape_facebook_vid,scrape_mailru_vid,scrape_vk_vid]:
+            parts=scrape_func(showpage,t)
+            if len(parts)>0:
+                break
+        
         return parts
+        
 
 
     show = get_show(watch_type)
@@ -299,15 +409,15 @@ def get_show_video_urls(showcode,
         for fallback in sorted(WATCH_URL.keys()):
             if fallback == watch_type:
                 continue  # tried before
-
+ 
             show = get_show(fallback)
             if show:
                 break
-
+ 
             else:
                 print "This episode is not available in format: '%s'" \
                       % WATCH_URL[fallback][2]
-
+ 
         else:
             print "This episode is not available in any format."
             return
@@ -416,7 +526,7 @@ def display_show_seasons_menu(params):
                                 key=lambda x: int(x.split(".")[0])))
 
     for s in season_info:
-        create_list_item("%s - %s" % (name.decode("utf-8"), s),
+        create_list_item("%s - %s" % (unicode(name.decode("windows-1254")), s),
                          create_xbmc_url(action="showEpisodes",
                                          name=name,
                                          showcode=code,
@@ -436,8 +546,8 @@ def display_show_episodes_menu(params):
     season = params["season"][0]
     lang = params["language"][0]
     autoplayepisode = params.get("autoplayepisode", [None])[0]
-
-    epinfo = get_show_episode_info(code)
+        
+    epinfo = get_show_episode_info(code,season)
 
     if not epinfo:
         xbmcgui.Dialog().ok("Error", "No episodes found for this season.")
@@ -500,7 +610,6 @@ def display_show_episodes_menu(params):
 
     xbmcplugin.endOfDirectory(PLUGIN_ID, cacheToDisc=True)
 
-
 def display_show(params):
     name = params["name"][0]
     code = params["showcode"][0]
@@ -548,8 +657,8 @@ def display_show(params):
             '%s S%sE%s Part %s' % (name, season, episode, (i + 1)))
 
         listitem.setInfo('video', {'Title': name})
-        playlist.add(url=video, listitem=listitem)
-
+        playlist.add(url=video['vid']+"|Cookie="+urllib.urlencode(video["cookies"],True), listitem=listitem)
+    print "playlist addedd: " + video['vid']+"|Cookie="+urllib.urlencode(video["cookies"],True)
     player.play(playlist)
 
 
