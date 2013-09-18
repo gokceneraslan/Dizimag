@@ -37,12 +37,12 @@ if REMOTE_DBG:
         sys.stderr.write("Error: " +
             "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
         sys.exit(1)
-        
+
 __plugin__ = 'Dizimag'
 __author__ = 'Gokcen Eraslan <gokcen.eraslan@gmail.com>'
 __url__ = 'http://code.google.com/p/plugin/'
-__date__ = '03-14-2012'
-__version__ = '0.6'
+__date__ = '09-18-2013'
+__version__ = '0.7'
 __settings__ = xbmcaddon.Addon(id='plugin.video.dizimag')
 
 
@@ -138,18 +138,18 @@ def get_redirect(lnk):
         print error.read()
     return f.geturl()
 
-class RedirectHandler(urllib2.HTTPRedirectHandler):     
-    def http_error_301(self, req, fp, code, msg, headers):  
-        result = urllib2.HTTPRedirectHandler.http_error_301( 
-            self, req, fp, code, msg, headers)              
-        result.status = code                                 
-        return result                                       
+class RedirectHandler(urllib2.HTTPRedirectHandler):
+    def http_error_301(self, req, fp, code, msg, headers):
+        result = urllib2.HTTPRedirectHandler.http_error_301(
+            self, req, fp, code, msg, headers)
+        result.status = code
+        return result
 
-    def http_error_302(self, req, fp, code, msg, headers):   
+    def http_error_302(self, req, fp, code, msg, headers):
         result = urllib2.HTTPRedirectHandler.http_error_302(
-            self, req, fp, code, msg, headers)              
-        result.status = code                                
-        return result      
+            self, req, fp, code, msg, headers)
+        result.status = code
+        return result
 
 def open_url(url):
     content = urllib2.urlopen(url)
@@ -299,8 +299,8 @@ def get_show_video_urls(showcode,
                         watch_type=WATCH_TYPE_TR_SUB_HD):
 
     def scrape_facebook_vid(showpage,t):
-        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage) 
-        
+        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage)
+
         if alphabet:
             alphabet = alphabet.group(1)
 
@@ -308,13 +308,13 @@ def get_show_video_urls(showcode,
             return
 
         alphabet=re.findall(r'670x3=\["(.*?)"\]',showpage)[0].replace("x","u00").decode("raw_unicode_escape","ignore").encode("ascii")
-        
+
 
         encoded_parts = re.findall(r"jQuery\.mp4\.d\('(.*?)'\)", showpage)
         parts = [{"vid":get_redirect(decode_base64(alphabet, x)),"cookies":[]} for x in encoded_parts]
 
         return parts
-    
+
     def scrape_mailru_vid(showpage,t):
         ru=re.findall('mail/(.*?)/_myvideo/(.*?)\&',showpage)
         if len(ru)==0:
@@ -331,10 +331,10 @@ def get_show_video_urls(showcode,
         if "hd" in js['videos'].keys() and t==0: parts.append({"vid":js['videos']['hd'],"cookies":cookies})
         if "sd" in js['videos'].keys() and not t==0: parts.append({"vid":js['videos']['sd'],"cookies":cookies})
         return parts
-    
+
     def scrape_vk_vid(showpage,t):
-        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage) 
-        
+        alphabet = re.search(r'670x3=\["(.*?)"\]', showpage)
+
         if alphabet:
             alphabet = alphabet.group(1)
 
@@ -342,11 +342,11 @@ def get_show_video_urls(showcode,
             return
 
         alphabet=re.findall(r'670x3=\["(.*?)"\]',showpage)[0].replace("x","u00").decode("raw_unicode_escape","ignore").encode("ascii")
-        
+
 
         encoded_parts = re.findall(r"jQuery\.mp4\.d\(\"(.*?)\"\)", showpage)
         pages = [decode_base64(alphabet, x) for x in encoded_parts]
-        
+
         parts=[]
         for i, page in enumerate(pages):
             showpage=open_url(page)
@@ -359,11 +359,11 @@ def get_show_video_urls(showcode,
             if len(regex)>0 and not t==0: parts.append({"vid":regex[0],"cookies":[]})
             regex = re.findall("url720=(.*?)&",showpage)
             if len(regex)>0 and not t==1: parts.append({"vid":regex[0],"cookies":[]})
-        
+
         return parts
 
-    
-    
+
+
     def get_show(t):
 
         showpage = open_url(WATCH_URL[t][0] % {'show': showcode,
@@ -372,7 +372,7 @@ def get_show_video_urls(showcode,
 
         if not showpage:
             return
-        
+
         sources=[("current server link","current servername")]
         current_server=re.findall('\"trigger\ssmall\syellowa\sawesome\">Kaynak:\s(.*?)<img', showpage)
         if len(current_server)>0 :
@@ -380,24 +380,24 @@ def get_show_video_urls(showcode,
             alternate_servers=re.findall('<a\shref=\"(.*?)\".*?gif>(.*?)</a>',alternate_servers[0],re.DOTALL)
             sources=[("current server link",current_server[0])]
             sources.extend(alternate_servers)
-        
+
         if len(sources)==0:
             return
         elif len(sources)==1:
             index=0
         elif len(sources)>1:
             index=xbmcgui.Dialog().select("Source", [ unicode(x[1].decode("windows-1254")) for x in sources])
-        
+
         if index>0:
             showpage = open_url(DOMAIN+sources[index][0])
-        
+
         for scrape_func in [scrape_facebook_vid,scrape_mailru_vid,scrape_vk_vid]:
             parts=scrape_func(showpage,t)
             if len(parts)>0:
                 break
-        
+
         return parts
-        
+
 
 
     show = get_show(watch_type)
@@ -409,15 +409,15 @@ def get_show_video_urls(showcode,
         for fallback in sorted(WATCH_URL.keys()):
             if fallback == watch_type:
                 continue  # tried before
- 
+
             show = get_show(fallback)
             if show:
                 break
- 
+
             else:
                 print "This episode is not available in format: '%s'" \
                       % WATCH_URL[fallback][2]
- 
+
         else:
             print "This episode is not available in any format."
             return
@@ -546,7 +546,7 @@ def display_show_episodes_menu(params):
     season = params["season"][0]
     lang = params["language"][0]
     autoplayepisode = params.get("autoplayepisode", [None])[0]
-        
+
     epinfo = get_show_episode_info(code,season)
 
     if not epinfo:
